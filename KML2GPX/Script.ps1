@@ -22,7 +22,7 @@ $coordinates = @(
 	('north', 'west')
 )
 
-Get-ChildItem "C:\Users\User\Downloads" -Filter '*.kml' |
+Get-ChildItem -Filter '*.kml' |
 Foreach-Object{
     $file = $_
 	$content = [xml](Get-Content $file.FullName)
@@ -32,11 +32,12 @@ Foreach-Object{
 	{
 		for ($i = 0; $i -lt 4; $i++)
 		{
+			$originalNode = $content.kml.GroundOverlay.LatLonBox;
 			$coordItem = $coordinates[$i]
-			$node = $resultGpx.CreateElement('trkpt')
-			$node.SetAttribute('lat', $content.kml.GroundOverlay.LatLonBox.SelectSingleNode($coordItem[0]).InnerText)
-			$node.SetAttribute('lon', $content.kml.GroundOverlay.LatLonBox.SelectSingleNode($coordItem[1]).InnerText)
-			$resultGpx.gpx.trk.trkseg.AppendChild($node)
+			$ptNode = $resultGpx.CreateElement('trkpt')
+			$ptNode.SetAttribute('lat', $originalNode.SelectSingleNode($coordItem[0]).InnerText)
+			$ptNode.SetAttribute('lon', $originalNode.SelectSingleNode($coordItem[1]).InnerText)
+			$resultGpx.gpx.trk.trkseg.AppendChild($ptNode)
 		}
 		
 		# So that "trkseg" node is not converted to String
@@ -44,7 +45,7 @@ Foreach-Object{
 		$resultGpx.gpx.trk.trkseg.RemoveChild($resultGpx.gpx.trk.trkseg.FirstChild)
 
 		$iso8859_1 = [System.Text.Encoding]::GetEncoding('ISO-8859-1')
-		$fileName = $file.DirectoryName + "\\" + $file.BaseName+'.gpx'
+		$fileName = $file.DirectoryName + "\" + $file.BaseName + ".gpx"
 		$sw = New-Object System.IO.StreamWriter($fileName, $false, $iso8859_1)
 		$resultGpx.Save($sw)
 		$sw.Close()
